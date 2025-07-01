@@ -8,8 +8,22 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
-export default function CommentItem({ comment, slug, onCommentUpdated }: { comment: Comment, slug: string, onCommentUpdated: (comment: Comment) => void }) {
+
+export default function CommentItem({ 
+    comment, 
+    slug, 
+    onCommentUpdated,
+    hoveredCommentId,
+    setHoveredCommentId
+}: { 
+    comment: Comment, 
+    slug: string, 
+    onCommentUpdated: (comment: Comment) => void,
+    hoveredCommentId: string | null,
+    setHoveredCommentId: (id: string | null) => void
+}) {
   const { seekTo } = useVideo();
   const { toast } = useToast();
   const [isDone, setIsDone] = useState(false);
@@ -17,6 +31,7 @@ export default function CommentItem({ comment, slug, onCommentUpdated }: { comme
   const [editText, setEditText] = useState(comment.text);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const isHighlighted = comment.id === hoveredCommentId;
 
   useEffect(() => {
     if (!slug) return;
@@ -110,7 +125,15 @@ export default function CommentItem({ comment, slug, onCommentUpdated }: { comme
   };
 
   return (
-    <div className={`flex items-start space-x-3 p-2 rounded-lg transition-opacity ${isDone ? 'opacity-40' : 'opacity-100'}`}>
+    <div 
+        className={cn(
+            'flex items-start space-x-3 p-2 rounded-lg transition-all duration-200', 
+            isDone ? 'opacity-40' : 'opacity-100',
+            isHighlighted && 'bg-accent/10'
+        )}
+        onMouseEnter={() => setHoveredCommentId(comment.id)}
+        onMouseLeave={() => setHoveredCommentId(null)}
+    >
         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full flex-shrink-0" onClick={toggleDone} aria-label={isDone ? 'Mark as not done' : 'Mark as done'}>
             {isDone ? <CheckCircle2 className="text-green-500" /> : <Circle className="text-muted-foreground" />}
         </Button>

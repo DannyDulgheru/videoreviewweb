@@ -45,7 +45,7 @@ export default function VideoListPage() {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [toast]);
   
   const handleDelete = async (slug: string) => {
     try {
@@ -102,6 +102,12 @@ export default function VideoListPage() {
     }
   };
 
+  const getExpirationDate = (isoDate: string) => {
+    const date = new Date(isoDate);
+    date.setDate(date.getDate() + 14);
+    return date.toLocaleDateString();
+  }
+
   if (isLoading) {
     return <Loader2 className="h-10 w-10 animate-spin text-primary" />;
   }
@@ -129,7 +135,10 @@ export default function VideoListPage() {
                  <Link href={`/v/${project.slug}/${project.versions[0].version}`} className="hover:underline">
                     <h2 className="text-xl font-semibold text-primary">{project.originalName}</h2>
                  </Link>
-                 <p className="text-sm text-muted-foreground">{project.versions.length} version(s) - Last updated: {new Date(project.versions[0].uploadedAt).toLocaleDateString()}</p>
+                 <div className="text-sm text-muted-foreground flex flex-col sm:flex-row sm:gap-4">
+                    <span>{project.versions.length} version(s) - Last updated: {new Date(project.versions[0].uploadedAt).toLocaleDateString()}</span>
+                    <span>Expires on: {getExpirationDate(project.createdAt)}</span>
+                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                   <Button variant="outline" size="sm" onClick={() => handleNewVersionClick(project.slug)} disabled={!!uploadingSlug}>

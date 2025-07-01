@@ -21,6 +21,7 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [projectTitle, setProjectTitle] = useState(project.originalName);
+  const [hoveredCommentId, setHoveredCommentId] = useState<string | null>(null);
   
   useEffect(() => {
     setSelectedVersion(initialVersion);
@@ -146,7 +147,7 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
         </header>
         <div className="flex flex-col md:flex-row w-full flex-grow bg-card rounded-xl shadow-lg overflow-hidden animate-in fade-in-50 min-h-0">
           <div className="relative w-full md:w-[65%] h-full flex items-center justify-center bg-black">
-            <VideoPlayer videoId={selectedVersion.videoId} comments={comments} />
+            <VideoPlayer videoId={selectedVersion.videoId} comments={comments} hoveredCommentId={hoveredCommentId} setHoveredCommentId={setHoveredCommentId} />
           </div>
           <div className="hidden md:flex items-center justify-center w-[2%]">
             <Separator orientation="vertical" className="h-full" />
@@ -159,6 +160,8 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
                 isLoading={isLoadingComments}
                 onCommentPosted={handleCommentPosted}
                 onCommentUpdated={handleCommentUpdated}
+                hoveredCommentId={hoveredCommentId}
+                setHoveredCommentId={setHoveredCommentId}
             />
           </div>
         </div>
