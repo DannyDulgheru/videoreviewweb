@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir, stat } from 'fs/promises';
+import { writeFile, mkdir, stat, readFile } from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
+import type { VideoProject } from '@/lib/types';
 
 const slugify = (text: string) => {
     return text
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.formData();
     const file: File | null = data.get('file') as unknown as File;
+    const existingSlug: string | null = data.get('slug') as string | null;
 
     if (!file) {
       return NextResponse.json({ success: false, error: 'No file found.' }, { status: 400 });
@@ -49,9 +51,6 @@ export async function POST(request: NextRequest) {
     const fileExtension = path.extname(file.name) || '.mp4';
     const newFilename = `${videoId}${fileExtension}`;
     
-    const originalNameWithoutExt = path.parse(file.name).name;
-    const baseSlug = slugify(originalNameWithoutExt) || 'video';
-
     const videosDir = path.join(process.cwd(), 'uploads', 'videos');
     const commentsDir = path.join(process.cwd(), 'uploads', 'comments');
     const metadataDir = path.join(process.cwd(), 'uploads', 'metadata');
@@ -59,8 +58,6 @@ export async function POST(request: NextRequest) {
     await mkdir(videosDir, { recursive: true });
     await mkdir(commentsDir, { recursive: true });
     await mkdir(metadataDir, { recursive: true });
-    
-    const slug = await findUniqueSlug(baseSlug, metadataDir);
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -70,16 +67,51 @@ export async function POST(request: NextRequest) {
 
     const commentPath = path.join(commentsDir, `${videoId}.json`);
     await writeFile(commentPath, JSON.stringify([]));
+    
+    let project: VideoProject;
+    let finalSlug: string;
 
-    const metadataPath = path.join(metadataDir, `${slug}.json`);
-    const metadata = {
-        videoId: videoId,
-        originalName: file.name,
-        slug: slug,
-    };
-    await writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    if (existingSlug) {
+        // This is a new version of an existing project
+        finalSlug = existingSlug;
+        const metadataPath = path.join(metadataDir, `${finalSlug}.json`);
+        const fileContent = await readFile(metadataPath, 'utf-8');
+        project = JSON.parse(fileContent);
+        
+        const newVersionNumber = project.versions.length > 0
+            ? Math.max(...project.versions.map(v => v.version)) + 1
+            : 1;
 
-    return NextResponse.json({ success: true, videoId: videoId, slug: slug });
+        project.versions.push({
+            version: newVersionNumber,
+            videoId: videoId,
+            uploadedAt: new Date().toISOString(),
+            originalName: file.name
+        });
+
+        await writeFile(metadataPath, JSON.stringify(project, null, 2));
+    } else {
+        // This is a new project
+        const originalNameWithoutExt = path.parse(file.name).name;
+        const baseSlug = slugify(originalNameWithoutExt) || 'video';
+        finalSlug = await findUniqueSlug(baseSlug, metadataDir);
+        
+        project = {
+            slug: finalSlug,
+            originalName: file.name,
+            versions: [{
+                version: 1,
+                videoId: videoId,
+                uploadedAt: new Date().toISOString(),
+                originalName: file.name
+            }]
+        };
+
+        const metadataPath = path.join(metadataDir, `${finalSlug}.json`);
+        await writeFile(metadataPath, JSON.stringify(project, null, 2));
+    }
+
+    return NextResponse.json({ success: true, videoId: videoId, slug: finalSlug });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
