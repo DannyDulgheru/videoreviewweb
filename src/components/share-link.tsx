@@ -13,7 +13,7 @@ export default function ShareLink({ videoId }: { videoId: string }) {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const url = `${window.location.origin}/?v=${videoId}`;
+      const url = `${window.location.origin}/v/${videoId}`;
       setShareUrl(url);
     }
   }, [videoId]);

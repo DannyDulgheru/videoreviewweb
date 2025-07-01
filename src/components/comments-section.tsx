@@ -46,7 +46,7 @@ export default function CommentsSection({ videoId }: { videoId: string }) {
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
             </div>
-        ) : <CommentList comments={comments} />}
+        ) : <CommentList comments={comments} videoId={videoId} />}
       </ScrollArea>
       <div className="p-4 border-t border-border bg-card flex-shrink-0">
         <CommentInput videoId={videoId} onCommentPosted={handleCommentPosted} />

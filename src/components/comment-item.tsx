@@ -6,13 +6,11 @@ import { useVideo } from '@/contexts/video-context';
 import type { Comment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-export default function CommentItem({ comment }: { comment: Comment }) {
+export default function CommentItem({ comment, videoId }: { comment: Comment, videoId: string }) {
   const { seekTo } = useVideo();
   const { toast } = useToast();
   const [isDone, setIsDone] = useState(false);
-  const videoId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('v') : null;
 
   useEffect(() => {
     if (!videoId) return;

@@ -42,12 +42,22 @@ export default function CommentInput({ videoId, onCommentPosted }: { videoId: st
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (text.trim() && !isSubmitting) {
+        e.currentTarget.form?.requestSubmit();
+      }
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="flex items-start space-x-2">
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Add your feedback at the current timestamp..."
+        onKeyDown={handleKeyDown}
+        placeholder="Add your feedback... (Shift+Enter for new line)"
         className="flex-1 resize-none"
         rows={2}
         disabled={isSubmitting}
