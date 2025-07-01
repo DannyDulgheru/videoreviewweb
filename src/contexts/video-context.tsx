@@ -15,7 +15,7 @@ export function VideoProvider({ children }: { children: ReactNode }) {
   const seekTo = (time: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime = time;
-      // The prompt says not to play, so we don't call play() here.
+      videoRef.current.play();
     }
   };
 

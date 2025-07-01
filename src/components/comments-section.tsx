@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Comment } from '@/lib/types';
 import CommentList from '@/components/comment-list';
 import CommentInput from '@/components/comment-input';
-import AISummary from '@/components/ai-summary';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -39,7 +38,6 @@ export default function CommentsSection({ videoId }: { videoId: string }) {
     <div className="flex flex-col h-full bg-card-foreground/5">
       <div className="p-4 border-b border-border flex justify-between items-center flex-shrink-0">
         <h2 className="text-xl font-bold font-headline">Feedback</h2>
-        <AISummary comments={comments} />
       </div>
       <ScrollArea className="flex-grow p-4">
         {isLoading ? (
