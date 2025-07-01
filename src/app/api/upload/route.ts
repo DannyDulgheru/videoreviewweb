@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid file type.' }, { status: 400 });
     }
 
-    const videoId = randomUUID();
+    const videoId = randomUUID().slice(0, 8);
     const fileExtension = path.extname(file.name) || '.mp4';
     const newFilename = `${videoId}${fileExtension}`;
     
