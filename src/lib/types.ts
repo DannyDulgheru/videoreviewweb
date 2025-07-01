@@ -16,7 +16,6 @@ export type VideoVersion = {
     videoId: string;
     uploadedAt: string;
     originalName: string;
-    thumbnailFilename?: string;
 };
 
 export type VideoProject = {
