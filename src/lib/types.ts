@@ -3,6 +3,7 @@ export type Comment = {
   text: string;
   timestamp: number;
   author: string;
+  version: number;
 };
 
 export type UploadResult = {
@@ -20,5 +21,6 @@ export type VideoVersion = {
 export type VideoProject = {
     slug: string;
     originalName: string; // Keep the original name of the first uploaded video
+    createdAt: string;
     versions: VideoVersion[];
 };

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, Circle, Save, X } from 'lucide-react';
+import { CheckCircle2, Circle } from 'lucide-react';
 import { useVideo } from '@/contexts/video-context';
 import type { Comment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 
 export default function CommentItem({ comment, slug, onCommentUpdated }: { comment: Comment, slug: string, onCommentUpdated: (comment: Comment) => void }) {
   const { seekTo } = useVideo();
@@ -90,6 +91,17 @@ export default function CommentItem({ comment, slug, onCommentUpdated }: { comme
       toast({ variant: 'destructive', title: 'Error', description: 'An error occurred.' });
     }
   };
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSaveEdit();
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelEdit();
+    }
+  }
 
   const formatTimestamp = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -108,6 +120,7 @@ export default function CommentItem({ comment, slug, onCommentUpdated }: { comme
             {formatTimestamp(comment.timestamp)}
           </button>
           <p className="text-sm font-bold text-foreground">{comment.author}</p>
+          <Badge variant="outline" className="px-1.5 py-0 text-xs">V{comment.version}</Badge>
         </div>
         {isEditing ? (
           <div className="mt-1 space-y-2">
@@ -117,16 +130,7 @@ export default function CommentItem({ comment, slug, onCommentUpdated }: { comme
               onChange={(e) => setEditText(e.target.value)}
               className="resize-none"
               rows={Math.max(2, editText.split('\n').length)}
-              onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSaveEdit();
-                  }
-                  if (e.key === 'Escape') {
-                    e.preventDefault();
-                    handleCancelEdit();
-                  }
-              }}
+              onKeyDown={handleKeyDown}
             />
             <div className="flex items-center justify-end space-x-2">
                 <Button variant="ghost" size="sm" onClick={handleCancelEdit}>

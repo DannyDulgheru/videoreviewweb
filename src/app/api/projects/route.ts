@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readdir, readFile, stat } from 'fs/promises';
 import path from 'path';
 import type { VideoProject } from '@/lib/types';
+import { deleteProjectBySlug } from '@/lib/project-actions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,20 +18,30 @@ export async function GET(request: NextRequest) {
     const files = await readdir(metadataDir);
     
     const videoProjects: VideoProject[] = [];
+    const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
     for (const file of files) {
         if (path.extname(file) === '.json') {
             const filePath = path.join(metadataDir, file);
-            const fileContent = await readFile(filePath, 'utf-8');
             try {
-                const project = JSON.parse(fileContent);
+                const fileContent = await readFile(filePath, 'utf-8');
+                const project: VideoProject = JSON.parse(fileContent);
+
+                // Auto-delete expired projects when listing
+                if (project.createdAt && new Date(project.createdAt) < twoWeeksAgo) {
+                    await deleteProjectBySlug(project.slug).catch(err => {
+                        console.error(`Failed to auto-delete expired project ${project.slug}:`, err);
+                    });
+                    continue; // Skip to next project
+                }
+
                 if (project.versions && project.versions.length > 0) {
                     // Sort versions descending
                     project.versions.sort((a: any, b: any) => b.version - a.version);
                     videoProjects.push(project);
                 }
             } catch (e) {
-                console.error(`Could not parse JSON for ${file}`, e);
+                console.error(`Could not parse or process JSON for ${file}`, e);
             }
         }
     }

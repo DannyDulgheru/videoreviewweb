@@ -13,7 +13,8 @@ export default function ShareLink({ slug }: { slug: string }) {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const url = `${window.location.origin}/v/${slug}`;
+      // Point to version 1 of the new project
+      const url = `${window.location.origin}/v/${slug}/1`;
       setShareUrl(url);
     }
   }, [slug]);

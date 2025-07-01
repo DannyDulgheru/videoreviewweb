@@ -3,6 +3,7 @@ import { writeFile, mkdir, stat, readFile } from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import type { VideoProject } from '@/lib/types';
+import slugify from 'slugify';
 
 async function findUniqueSlug(slug: string, metadataDir: string): Promise<string> {
     let uniqueSlug = slug;
@@ -18,7 +19,7 @@ async function findUniqueSlug(slug: string, metadataDir: string): Promise<string
             return uniqueSlug;
         }
     }
-    return `${slug}-${randomUUID().slice(0, 6)}`;
+    return `${slug}-${randomUUID().slice(0, 3)}`;
 }
 
 
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
         await writeFile(metadataPath, JSON.stringify(project, null, 2));
     } else {
         // This is a new project
-        const baseSlug = randomUUID().slice(0, 6);
+        const baseSlug = slugify(file.name.replace(/\.[^/.]+$/, ""), { lower: true, strict: true }) || `project-${randomUUID().slice(0,3)}`;
         finalSlug = await findUniqueSlug(baseSlug, metadataDir);
         
         // Create the comment file for the new project, tied to the slug
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
         project = {
             slug: finalSlug,
             originalName: file.name,
+            createdAt: new Date().toISOString(),
             versions: [{
                 version: 1,
                 videoId: videoId,

@@ -45,7 +45,7 @@ export default function VideoListPage() {
 
   useEffect(() => {
     fetchProjects();
-  }, [toast]);
+  }, []);
   
   const handleDelete = async (slug: string) => {
     try {
@@ -126,7 +126,7 @@ export default function VideoListPage() {
         {projects.map(project => (
             <Card key={project.slug} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 gap-4">
               <div className="flex-grow">
-                 <Link href={`/v/${project.slug}`} className="hover:underline">
+                 <Link href={`/v/${project.slug}/${project.versions[0].version}`} className="hover:underline">
                     <h2 className="text-xl font-semibold text-primary">{project.originalName}</h2>
                  </Link>
                  <p className="text-sm text-muted-foreground">{project.versions.length} version(s) - Last updated: {new Date(project.versions[0].uploadedAt).toLocaleDateString()}</p>

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, unlink, readdir } from 'fs/promises';
+import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import type { VideoProject } from '@/lib/types';
+import { deleteProjectBySlug } from '@/lib/project-actions';
 
 const getMetadataPath = (slug: string) => {
     if (!slug || typeof slug !== 'string' || slug.includes('..')) {
@@ -16,7 +17,14 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
         const filePath = getMetadataPath(slug);
         const fileContent = await readFile(filePath, 'utf-8');
         const project: VideoProject = JSON.parse(fileContent);
-        // Sort versions descending
+
+        // Lazily delete expired projects on access
+        const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+        if (project.createdAt && new Date(project.createdAt) < twoWeeksAgo) {
+            await deleteProjectBySlug(slug);
+            return NextResponse.json({ error: 'Project expired and has been deleted' }, { status: 410 }); // 410 Gone
+        }
+
         project.versions.sort((a, b) => b.version - a.version);
         return NextResponse.json(project);
     } catch (error) {
@@ -28,49 +36,43 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     }
 }
 
-
-export async function DELETE(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: { slug: string } }) {
     try {
         const { slug } = params;
-        const metadataPath = getMetadataPath(slug);
+        const { originalName } = await request.json();
 
+        if (!originalName) {
+            return NextResponse.json({ error: 'New name is required' }, { status: 400 });
+        }
+        
+        const metadataPath = getMetadataPath(slug);
         const fileContent = await readFile(metadataPath, 'utf-8');
         const project: VideoProject = JSON.parse(fileContent);
 
-        const videosDir = path.join(process.cwd(), 'uploads', 'videos');
-        const commentsDir = path.join(process.cwd(), 'uploads', 'comments');
+        project.originalName = originalName;
 
-        for (const version of project.versions) {
-            // Delete video file
-            try {
-                const videoFiles = await readdir(videosDir);
-                const videoFilename = videoFiles.find(file => file.startsWith(version.videoId));
-                if (videoFilename) {
-                    await unlink(path.join(videosDir, videoFilename));
-                }
-            } catch (e) {
-                 console.error(`Could not delete video for videoId ${version.videoId}`, e);
-            }
+        await writeFile(metadataPath, JSON.stringify(project, null, 2));
+
+        return NextResponse.json(project, { status: 200 });
+    } catch (error) {
+         if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+            return NextResponse.json({ error: 'Project not found' }, { status: 404 });
         }
+        console.error('Error updating project:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
 
-        // Delete the single comments file for the project
-        const commentPath = path.join(commentsDir, `${slug}.json`);
-        try {
-            await unlink(commentPath);
-        } catch (e) {
-            if (e instanceof Error && 'code' in e && e.code !== 'ENOENT') {
-                console.error(`Could not delete comments for project ${slug}`, e);
-            }
-        }
 
-        // Delete metadata file
-        await unlink(metadataPath);
-
+export async function DELETE(request: NextRequest, { params }: { params: { slug: string } }) {
+    try {
+        await deleteProjectBySlug(params.slug);
         return NextResponse.json({ success: true, message: 'Project deleted successfully.' });
-
     } catch (error) {
         if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-            return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+            // This can happen if the project was already deleted but a delete request was sent again.
+            // It's safe to return success in this case.
+            return NextResponse.json({ success: true, message: 'Project already deleted.' });
         }
         console.error('Error deleting project:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

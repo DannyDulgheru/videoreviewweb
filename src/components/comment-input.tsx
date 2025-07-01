@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useVideo } from '@/contexts/video-context';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,11 +8,37 @@ import { useToast } from '@/hooks/use-toast';
 import { Send, Loader2 } from 'lucide-react';
 import type { Comment } from '@/lib/types';
 
-export default function CommentInput({ slug, onCommentPosted }: { slug: string, onCommentPosted: (comment: Comment) => void }) {
+const adjectives = ["Agile", "Bright", "Clever", "Dandy", "Eager", "Fancy", "Gentle", "Happy", "Jolly", "Kind", "Lively", "Merry", "Nice", "Proud", "Silly", "Witty"];
+const nouns = ["Aardvark", "Badger", "Capybara", "Dolphin", "Elephant", "Fox", "Giraffe", "Hippo", "Iguana", "Jaguar", "Koala", "Lemur", "Meerkat", "Narwhal", "Ocelot", "Penguin", "Quokka", "Rabbit", "Sloth", "Tiger", "Urial", "Vulture", "Walrus", "Xerus", "Yak", "Zebra"];
+
+function generateRandomName() {
+  const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  return `${adj} ${noun}`;
+}
+
+
+export default function CommentInput({ slug, version, onCommentPosted }: { slug: string, version: number, onCommentPosted: (comment: Comment) => void }) {
   const [text, setText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authorName, setAuthorName] = useState('Anonymous');
   const { videoRef } = useVideo();
   const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+      let user = localStorage.getItem('videoReviewUser');
+      if (user) {
+        setAuthorName(user);
+      } else {
+        const newName = generateRandomName();
+        setAuthorName(newName);
+        localStorage.setItem('videoReviewUser', newName);
+      }
+    } catch (e) {
+      console.error("Could not access local storage", e);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +51,7 @@ export default function CommentInput({ slug, onCommentPosted }: { slug: string, 
       const response = await fetch(`/api/comments/${slug}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, timestamp }),
+        body: JSON.stringify({ text, timestamp, author: authorName, version }),
       });
 
       if (response.ok) {
@@ -46,7 +72,7 @@ export default function CommentInput({ slug, onCommentPosted }: { slug: string, 
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (text.trim() && !isSubmitting) {
-        e.currentTarget.form?.requestSubmit();
+         handleSubmit(e as any);
       }
     }
   };
