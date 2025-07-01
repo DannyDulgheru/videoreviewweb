@@ -24,7 +24,7 @@ export default function UploadPage() {
       </CardHeader>
       <CardContent>
         {uploadResult ? (
-          <ShareLink videoId={uploadResult.videoId} slug={uploadResult.slug} />
+          <ShareLink slug={uploadResult.slug} />
         ) : (
           <VideoUploadForm onUploadSuccess={setUploadResult} />
         )}

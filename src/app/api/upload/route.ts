@@ -4,18 +4,6 @@ import path from 'path';
 import { randomUUID } from 'crypto';
 import type { VideoProject } from '@/lib/types';
 
-const slugify = (text: string) => {
-    return text
-        .toString()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w-]+/g, '')
-        .replace(/--+/g, '-');
-};
-
 async function findUniqueSlug(slug: string, metadataDir: string): Promise<string> {
     let uniqueSlug = slug;
     let counter = 1;
@@ -47,7 +35,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid file type.' }, { status: 400 });
     }
 
-    const videoId = randomUUID().slice(0, 8);
+    const videoId = randomUUID().slice(0, 4);
     const fileExtension = path.extname(file.name) || '.mp4';
     const newFilename = `${videoId}${fileExtension}`;
     
@@ -89,8 +77,7 @@ export async function POST(request: NextRequest) {
         await writeFile(metadataPath, JSON.stringify(project, null, 2));
     } else {
         // This is a new project
-        const originalNameWithoutExt = path.parse(file.name).name;
-        const baseSlug = slugify(originalNameWithoutExt) || 'video';
+        const baseSlug = randomUUID().slice(0, 6);
         finalSlug = await findUniqueSlug(baseSlug, metadataDir);
         
         // Create the comment file for the new project, tied to the slug

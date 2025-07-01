@@ -6,17 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from "@/hooks/use-toast";
 
-export default function ShareLink({ videoId, slug }: { videoId: string, slug: string }) {
+export default function ShareLink({ slug }: { slug: string }) {
   const [shareUrl, setShareUrl] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const url = `${window.location.origin}/v/${videoId}/${slug}`;
+      const url = `${window.location.origin}/v/${slug}`;
       setShareUrl(url);
     }
-  }, [videoId, slug]);
+  }, [slug]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -26,6 +26,12 @@ export default function ShareLink({ videoId, slug }: { videoId: string, slug: st
         description: "The video link has been copied to your clipboard.",
       });
       setTimeout(() => setIsCopied(false), 2000);
+    }, () => {
+        toast({
+            variant: "destructive",
+            title: "Copy Failed",
+            description: "Could not copy the link to your clipboard."
+        });
     });
   };
 
