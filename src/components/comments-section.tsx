@@ -34,6 +34,10 @@ export default function CommentsSection({ slug }: { slug: string }) {
   const handleCommentPosted = (newComment: Comment) => {
     setComments(prev => [...prev, newComment]);
   };
+
+  const handleCommentUpdated = (updatedComment: Comment) => {
+    setComments(prev => prev.map(c => c.id === updatedComment.id ? updatedComment : c));
+  };
   
   return (
     <div className="flex flex-col h-full bg-card-foreground/5">
@@ -47,7 +51,7 @@ export default function CommentsSection({ slug }: { slug: string }) {
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
             </div>
-        ) : <CommentList comments={comments} slug={slug} />}
+        ) : <CommentList comments={comments} slug={slug} onCommentUpdated={handleCommentUpdated} />}
       </ScrollArea>
       <div className="p-4 border-t border-border bg-card flex-shrink-0">
         <CommentInput slug={slug} onCommentPosted={handleCommentPosted} />

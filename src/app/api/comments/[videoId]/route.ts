@@ -77,3 +77,43 @@ export async function POST(
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { videoId: string } } // videoId is the slug
+) {
+  try {
+    const slug = params.videoId;
+    const filePath = getCommentFilePath(slug);
+    const { commentId, text } = await request.json();
+
+    if (!commentId || !text) {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    }
+    
+    let comments: Comment[] = [];
+    try {
+      const fileContent = await readFile(filePath, 'utf-8');
+      comments = JSON.parse(fileContent);
+    } catch (e) {
+      // This should not happen if we are editing a comment, as the file must exist.
+      return NextResponse.json({ error: 'Comment data not found' }, { status: 404 });
+    }
+
+    const commentIndex = comments.findIndex(c => c.id === commentId);
+
+    if (commentIndex === -1) {
+      return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
+    }
+    
+    const updatedComment = { ...comments[commentIndex], text };
+    comments[commentIndex] = updatedComment;
+    
+    await writeFile(filePath, JSON.stringify(comments, null, 2));
+
+    return NextResponse.json(updatedComment, { status: 200 });
+  } catch (error) {
+    console.error('Error updating comment:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}

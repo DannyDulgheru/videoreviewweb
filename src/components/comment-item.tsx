@@ -1,16 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { CheckCircle2, Circle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { CheckCircle2, Circle, Save, X } from 'lucide-react';
 import { useVideo } from '@/contexts/video-context';
 import type { Comment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 
-export default function CommentItem({ comment, slug }: { comment: Comment, slug: string }) {
+export default function CommentItem({ comment, slug, onCommentUpdated }: { comment: Comment, slug: string, onCommentUpdated: (comment: Comment) => void }) {
   const { seekTo } = useVideo();
   const { toast } = useToast();
   const [isDone, setIsDone] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.text);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
 
   useEffect(() => {
     if (!slug) return;
@@ -21,6 +26,13 @@ export default function CommentItem({ comment, slug }: { comment: Comment, slug:
       console.error("Could not read from local storage", e);
     }
   }, [comment.id, slug]);
+  
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.select();
+    }
+  }, [isEditing]);
   
   const toggleDone = () => {
     if (!slug) return;
@@ -43,6 +55,42 @@ export default function CommentItem({ comment, slug }: { comment: Comment, slug:
     }
   };
 
+  const handleDoubleClick = () => {
+    setIsEditing(true);
+  };
+  
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditText(comment.text);
+  };
+
+  const handleSaveEdit = async () => {
+    if (editText.trim() === '' || editText.trim() === comment.text) {
+        setIsEditing(false);
+        setEditText(comment.text);
+        return;
+    }
+    
+    try {
+      const response = await fetch(`/api/comments/${slug}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commentId: comment.id, text: editText.trim() }),
+      });
+
+      if (response.ok) {
+        const updatedComment = await response.json();
+        onCommentUpdated(updatedComment);
+        setIsEditing(false);
+        toast({ title: 'Comment updated!' });
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update comment.' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'An error occurred.' });
+    }
+  };
+
   const formatTimestamp = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
@@ -61,7 +109,39 @@ export default function CommentItem({ comment, slug }: { comment: Comment, slug:
           </button>
           <p className="text-sm font-bold text-foreground">{comment.author}</p>
         </div>
-        <p className="text-foreground/90">{comment.text}</p>
+        {isEditing ? (
+          <div className="mt-1 space-y-2">
+            <Textarea 
+              ref={textareaRef}
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              className="resize-none"
+              rows={Math.max(2, editText.split('\n').length)}
+              onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSaveEdit();
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    handleCancelEdit();
+                  }
+              }}
+            />
+            <div className="flex items-center justify-end space-x-2">
+                <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                    Cancel
+                </Button>
+                <Button size="sm" onClick={handleSaveEdit}>
+                    Save
+                </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-foreground/90 whitespace-pre-wrap" onDoubleClick={handleDoubleClick}>
+            {comment.text}
+          </p>
+        )}
       </div>
     </div>
   );
