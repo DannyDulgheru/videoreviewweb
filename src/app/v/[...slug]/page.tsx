@@ -3,6 +3,7 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import ReviewPage from '@/components/review-page';
 import type { VideoProject, VideoVersion } from '@/lib/types';
+import type { Metadata } from 'next';
 
 async function getProject(slug: string): Promise<VideoProject | null> {
     try {
@@ -21,6 +22,91 @@ async function getProject(slug: string): Promise<VideoProject | null> {
         return null;
     }
 }
+
+export async function generateMetadata({ params }: { params: { slug: string[] } }): Promise<Metadata> {
+  const slug = params.slug[0];
+  const versionParam = params.slug[1];
+  const project = await getProject(slug);
+
+  if (!project || project.versions.length === 0) {
+    return {
+      title: 'Project Not Found',
+    };
+  }
+  
+  const getBaseUrl = () => {
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+    return `http://localhost:9002`;
+  };
+  const baseUrl = getBaseUrl();
+
+  const latestVersion = project.versions[0];
+  let selectedVersion: VideoVersion | undefined;
+
+  if (versionParam) {
+    const versionNumber = parseInt(versionParam, 10);
+    selectedVersion = project.versions.find(v => v.version === versionNumber);
+  }
+  
+  if (!selectedVersion) {
+    selectedVersion = latestVersion;
+  }
+  
+  const getMimeType = (filename: string) => {
+    const extension = path.extname(filename).toLowerCase();
+    switch (extension) {
+      case '.mp4': return 'video/mp4';
+      case '.webm': return 'video/webm';
+      case '.ogv': return 'video/ogg';
+      case '.mov': return 'video/quicktime';
+      default: return 'video/mp4';
+    }
+  }
+  const mimeType = getMimeType(selectedVersion.originalName);
+  const videoUrl = `${baseUrl}/api/videos/${selectedVersion.videoId}`;
+  const pageUrl = `${baseUrl}/v/${project.slug}/${selectedVersion.version}`;
+  const thumbnailUrl = 'https://placehold.co/1200x630.png';
+  const title = project.originalName;
+  const description = `Review Version ${selectedVersion.version} of ${project.originalName}. Leave timestamped feedback easily.`;
+
+  return {
+    title: `${title} - V${selectedVersion.version}`,
+    description: description,
+    openGraph: {
+      title: title,
+      description: description,
+      url: pageUrl,
+      type: 'video.other',
+      images: [
+        {
+          url: thumbnailUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+      videos: [
+        {
+          url: videoUrl,
+          secureUrl: videoUrl,
+          type: mimeType,
+          width: 1280,
+          height: 720,
+        },
+      ],
+    },
+    twitter: {
+      card: 'player',
+      title: title,
+      description: description,
+      images: [thumbnailUrl],
+      player: videoUrl,
+      playerWidth: 1280,
+      playerHeight: 720,
+    },
+  };
+}
+
 
 // The slug parameter can be ['my-cool-video'] or ['my-cool-video', '1']
 export default async function VideoReviewPage({ params }: { params: { slug: string[] } }) {
