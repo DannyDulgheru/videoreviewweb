@@ -6,17 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from "@/hooks/use-toast";
 
-export default function ShareLink({ videoId }: { videoId: string }) {
+export default function ShareLink({ videoId, slug }: { videoId: string, slug: string }) {
   const [shareUrl, setShareUrl] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const url = `${window.location.origin}/v/${videoId}`;
+      const url = `${window.location.origin}/v/${videoId}/${slug}`;
       setShareUrl(url);
     }
-  }, [videoId]);
+  }, [videoId, slug]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl).then(() => {

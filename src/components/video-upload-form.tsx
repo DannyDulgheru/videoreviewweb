@@ -5,8 +5,9 @@ import { UploadCloud, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from "@/hooks/use-toast";
+import type { UploadResult } from '@/lib/types';
 
-export default function VideoUploadForm({ onUploadSuccess }: { onUploadSuccess: (result: { videoId: string }) => void }) {
+export default function VideoUploadForm({ onUploadSuccess }: { onUploadSuccess: (result: UploadResult) => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -75,7 +76,7 @@ export default function VideoUploadForm({ onUploadSuccess }: { onUploadSuccess: 
       setIsLoading(false);
       if (xhr.status === 200) {
         const response = JSON.parse(xhr.responseText);
-        onUploadSuccess({ videoId: response.videoId });
+        onUploadSuccess({ videoId: response.videoId, slug: response.slug });
       } else {
         toast({
             variant: "destructive",

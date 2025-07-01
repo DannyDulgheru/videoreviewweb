@@ -4,9 +4,10 @@ import { useState } from 'react';
 import VideoUploadForm from '@/components/video-upload-form';
 import ShareLink from '@/components/share-link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import type { UploadResult } from '@/lib/types';
 
 export default function UploadPage() {
-  const [uploadResult, setUploadResult] = useState<{ videoId: string; } | null>(null);
+  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
 
   return (
     <Card className="w-full max-w-2xl shadow-2xl animate-in fade-in-50" style={{'--tw-shadow-color': 'hsl(var(--accent))', '--tw-shadow-opacity': '0.1'}}>
@@ -16,7 +17,7 @@ export default function UploadPage() {
       </CardHeader>
       <CardContent>
         {uploadResult ? (
-          <ShareLink videoId={uploadResult.videoId} />
+          <ShareLink videoId={uploadResult.videoId} slug={uploadResult.slug} />
         ) : (
           <VideoUploadForm onUploadSuccess={setUploadResult} />
         )}

@@ -4,3 +4,8 @@ export type Comment = {
   timestamp: number;
   author: string;
 };
+
+export type UploadResult = {
+  videoId: string;
+  slug: string;
+};
