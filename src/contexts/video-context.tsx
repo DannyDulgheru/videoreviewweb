@@ -14,8 +14,8 @@ export function VideoProvider({ children }: { children: ReactNode }) {
 
   const seekTo = (time: number) => {
     if (videoRef.current) {
-      videoRef.current.currentTime = time;
       videoRef.current.play();
+      videoRef.current.currentTime = time;
     }
   };
 
