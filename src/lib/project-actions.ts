@@ -24,8 +24,9 @@ export async function deleteProjectBySlug(slug: string): Promise<void> {
 
     const videosDir = path.join(process.cwd(), 'uploads', 'videos');
     const commentsDir = path.join(process.cwd(), 'uploads', 'comments');
+    const thumbnailsDir = path.join(process.cwd(), 'uploads', 'thumbnails');
 
-    // Delete all video versions
+    // Delete all video versions and their thumbnails
     for (const version of project.versions) {
         try {
             const videoFiles = await readdir(videosDir);
@@ -35,6 +36,14 @@ export async function deleteProjectBySlug(slug: string): Promise<void> {
             }
         } catch (e) {
              console.error(`Could not delete video for videoId ${version.videoId}`, e);
+        }
+
+        if (version.thumbnailFilename) {
+            try {
+                await unlink(path.join(thumbnailsDir, version.thumbnailFilename));
+            } catch(e) {
+                console.error(`Could not delete thumbnail for videoId ${version.videoId}`, e);
+            }
         }
     }
 

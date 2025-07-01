@@ -4,6 +4,10 @@ import path from 'path';
 import { randomUUID } from 'crypto';
 import type { VideoProject } from '@/lib/types';
 import slugify from 'slugify';
+import ffmpeg from 'fluent-ffmpeg';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 async function findUniqueSlug(slug: string, metadataDir: string): Promise<string> {
     let uniqueSlug = slug;
@@ -43,16 +47,33 @@ export async function POST(request: NextRequest) {
     const videosDir = path.join(process.cwd(), 'uploads', 'videos');
     const commentsDir = path.join(process.cwd(), 'uploads', 'comments');
     const metadataDir = path.join(process.cwd(), 'uploads', 'metadata');
+    const thumbnailsDir = path.join(process.cwd(), 'uploads', 'thumbnails');
     
     await mkdir(videosDir, { recursive: true });
     await mkdir(commentsDir, { recursive: true });
     await mkdir(metadataDir, { recursive: true });
+    await mkdir(thumbnailsDir, { recursive: true });
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
     const videoPath = path.join(videosDir, newFilename);
     await writeFile(videoPath, buffer);
+
+    const thumbnailFilename = `${videoId}.jpg`;
+    const thumbnailPath = path.join(thumbnailsDir, thumbnailFilename);
+
+    await new Promise<void>((resolve, reject) => {
+        ffmpeg(videoPath)
+            .on('end', () => resolve())
+            .on('error', (err) => reject(new Error(`FFMPEG error: ${err.message}`)))
+            .screenshots({
+                timestamps: ['00:00:01.000'],
+                filename: thumbnailFilename,
+                folder: thumbnailsDir,
+                size: '1200x630'
+            });
+    });
     
     let project: VideoProject;
     let finalSlug: string;
@@ -72,7 +93,8 @@ export async function POST(request: NextRequest) {
             version: newVersionNumber,
             videoId: videoId,
             uploadedAt: new Date().toISOString(),
-            originalName: file.name
+            originalName: file.name,
+            thumbnailFilename: thumbnailFilename
         });
 
         await writeFile(metadataPath, JSON.stringify(project, null, 2));
@@ -93,7 +115,8 @@ export async function POST(request: NextRequest) {
                 version: 1,
                 videoId: videoId,
                 uploadedAt: new Date().toISOString(),
-                originalName: file.name
+                originalName: file.name,
+                thumbnailFilename: thumbnailFilename
             }]
         };
 

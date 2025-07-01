@@ -36,7 +36,9 @@ export async function generateMetadata({ params }: { params: { slug: string[] } 
   
   const getBaseUrl = () => {
     if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-    return `http://localhost:9002`;
+    // Use NEXT_PUBLIC_ for client-side, but this is server-side.
+    // Fallback to localhost if not on Vercel.
+    return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
   };
   const baseUrl = getBaseUrl();
 
@@ -67,6 +69,8 @@ export async function generateMetadata({ params }: { params: { slug: string[] } 
   const pageUrl = `${baseUrl}/v/${project.slug}/${selectedVersion.version}`;
   const title = project.originalName;
   const description = `Review Version ${selectedVersion.version} of ${project.originalName}. Leave timestamped feedback easily.`;
+  const imageUrl = selectedVersion.thumbnailFilename ? `${baseUrl}/api/thumbnails/${selectedVersion.thumbnailFilename}` : undefined;
+
 
   return {
     title: `${title} - V${selectedVersion.version}`,
@@ -76,6 +80,14 @@ export async function generateMetadata({ params }: { params: { slug: string[] } 
       description: description,
       url: pageUrl,
       type: 'video.other',
+      images: imageUrl ? [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ] : [],
       videos: [
         {
           url: videoUrl,
@@ -93,6 +105,7 @@ export async function generateMetadata({ params }: { params: { slug: string[] } 
       player: videoUrl,
       playerWidth: 1280,
       playerHeight: 720,
+      images: imageUrl ? [imageUrl] : undefined,
     },
   };
 }
