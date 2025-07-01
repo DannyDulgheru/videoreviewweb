@@ -66,6 +66,7 @@ export async function generateMetadata({ params }: { params: { slug: string[] } 
   }
   const mimeType = getMimeType(selectedVersion.originalName);
   const videoUrl = `${baseUrl}/api/videos/${selectedVersion.videoId}`;
+  const imageUrl = `https://placehold.co/1200x630.png`;
   const pageUrl = `${baseUrl}/v/${project.slug}/${selectedVersion.version}`;
   const title = project.originalName;
   const description = `Review Version ${selectedVersion.version} of ${project.originalName}. Leave timestamped feedback easily.`;
@@ -79,6 +80,14 @@ export async function generateMetadata({ params }: { params: { slug: string[] } 
       description: description,
       url: pageUrl,
       type: 'video.other',
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: `Preview for ${title}`,
+        }
+      ],
       videos: [
         {
           url: videoUrl,
@@ -93,6 +102,7 @@ export async function generateMetadata({ params }: { params: { slug: string[] } 
       card: 'player',
       title: title,
       description: description,
+      image: imageUrl,
       player: videoUrl,
       playerWidth: 1280,
       playerHeight: 720,
