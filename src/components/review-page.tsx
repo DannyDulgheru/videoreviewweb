@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VideoPlayer from '@/components/video-player';
 import CommentsSection from '@/components/comments-section';
 import { Separator } from '@/components/ui/separator';
@@ -11,6 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function ReviewPage({ project }: { project: VideoProject }) {
   // Default to the latest version (which is the first in the sorted array)
   const [selectedVersion, setSelectedVersion] = useState<VideoVersion>(project.versions[0]);
+  
+  // This effect ensures that when the project data changes (e.g. new version added),
+  // we are still showing the latest version.
+  useEffect(() => {
+      setSelectedVersion(project.versions[0]);
+  }, [project]);
   
   const handleVersionChange = (videoId: string) => {
       const version = project.versions.find(v => v.videoId === videoId);
@@ -50,7 +56,7 @@ export default function ReviewPage({ project }: { project: VideoProject }) {
             <Separator orientation="vertical" className="h-full" />
           </div>
           <div className="w-full md:w-[33%] h-full flex flex-col min-h-0">
-            <CommentsSection videoId={selectedVersion.videoId} />
+            <CommentsSection slug={project.slug} />
           </div>
         </div>
       </div>

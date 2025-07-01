@@ -7,14 +7,15 @@ import CommentInput from '@/components/comment-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function CommentsSection({ videoId }: { videoId: string }) {
+export default function CommentsSection({ slug }: { slug: string }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchComments = useCallback(async () => {
+    if (!slug) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/comments/${videoId}`);
+      const response = await fetch(`/api/comments/${slug}`);
       if (response.ok) {
         const data = await response.json();
         setComments(data);
@@ -24,7 +25,7 @@ export default function CommentsSection({ videoId }: { videoId: string }) {
     } finally {
       setIsLoading(false);
     }
-  }, [videoId]);
+  }, [slug]);
 
   useEffect(() => {
     fetchComments();
@@ -46,10 +47,10 @@ export default function CommentsSection({ videoId }: { videoId: string }) {
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
             </div>
-        ) : <CommentList comments={comments} videoId={videoId} />}
+        ) : <CommentList comments={comments} slug={slug} />}
       </ScrollArea>
       <div className="p-4 border-t border-border bg-card flex-shrink-0">
-        <CommentInput videoId={videoId} onCommentPosted={handleCommentPosted} />
+        <CommentInput slug={slug} onCommentPosted={handleCommentPosted} />
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Send, Loader2 } from 'lucide-react';
 import type { Comment } from '@/lib/types';
 
-export default function CommentInput({ videoId, onCommentPosted }: { videoId: string, onCommentPosted: (comment: Comment) => void }) {
+export default function CommentInput({ slug, onCommentPosted }: { slug: string, onCommentPosted: (comment: Comment) => void }) {
   const [text, setText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { videoRef } = useVideo();
@@ -22,7 +22,7 @@ export default function CommentInput({ videoId, onCommentPosted }: { videoId: st
     const timestamp = videoRef.current.currentTime;
 
     try {
-      const response = await fetch(`/api/comments/${videoId}`, {
+      const response = await fetch(`/api/comments/${slug}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, timestamp }),

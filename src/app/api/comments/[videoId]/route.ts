@@ -3,22 +3,24 @@ import { readFile, writeFile, stat, mkdir } from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import type { Comment } from '@/lib/types';
-import { statSync } from 'fs';
 
-const getCommentFilePath = (videoId: string) => {
-    if (!videoId || typeof videoId !== 'string' || videoId.includes('..')) {
-        throw new Error('Invalid video ID');
+// Note: The dynamic route parameter is named 'videoId' due to the file name,
+// but it actually contains the project 'slug'.
+const getCommentFilePath = (slug: string) => {
+    if (!slug || typeof slug !== 'string' || slug.includes('..')) {
+        throw new Error('Invalid slug');
     }
     const commentsDir = path.join(process.cwd(), 'uploads', 'comments');
-    return path.join(commentsDir, `${videoId}.json`);
+    return path.join(commentsDir, `${slug}.json`);
 }
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { videoId: string } }
+  { params }: { params: { videoId: string } } // videoId is the slug
 ) {
   try {
-    const filePath = getCommentFilePath(params.videoId);
+    const slug = params.videoId;
+    const filePath = getCommentFilePath(slug);
     await stat(filePath); // Check if file exists
     const fileContent = await readFile(filePath, 'utf-8');
     const comments = JSON.parse(fileContent);
@@ -26,6 +28,7 @@ export async function GET(
     return NextResponse.json(comments);
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      // If the comment file doesn't exist for the slug, return an empty array.
       return NextResponse.json([]);
     }
     console.error('Error fetching comments:', error);
@@ -35,11 +38,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { videoId: string } }
+  { params }: { params: { videoId: string } } // videoId is the slug
 ) {
   try {
-    const { videoId } = params;
-    const filePath = getCommentFilePath(videoId);
+    const slug = params.videoId;
+    const filePath = getCommentFilePath(slug);
     const { text, timestamp } = await request.json();
 
     if (!text || typeof timestamp !== 'number') {

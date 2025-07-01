@@ -51,15 +51,15 @@ export async function DELETE(request: NextRequest, { params }: { params: { slug:
             } catch (e) {
                  console.error(`Could not delete video for videoId ${version.videoId}`, e);
             }
-            
-            // Delete comments file
-            const commentPath = path.join(commentsDir, `${version.videoId}.json`);
-            try {
-                await unlink(commentPath);
-            } catch (e) {
-                if (e instanceof Error && 'code' in e && e.code !== 'ENOENT') {
-                    console.error(`Could not delete comments for videoId ${version.videoId}`, e);
-                }
+        }
+
+        // Delete the single comments file for the project
+        const commentPath = path.join(commentsDir, `${slug}.json`);
+        try {
+            await unlink(commentPath);
+        } catch (e) {
+            if (e instanceof Error && 'code' in e && e.code !== 'ENOENT') {
+                console.error(`Could not delete comments for project ${slug}`, e);
             }
         }
 

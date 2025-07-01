@@ -7,25 +7,25 @@ import type { Comment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 
-export default function CommentItem({ comment, videoId }: { comment: Comment, videoId: string }) {
+export default function CommentItem({ comment, slug }: { comment: Comment, slug: string }) {
   const { seekTo } = useVideo();
   const { toast } = useToast();
   const [isDone, setIsDone] = useState(false);
 
   useEffect(() => {
-    if (!videoId) return;
+    if (!slug) return;
     try {
-      const doneComments = JSON.parse(localStorage.getItem(`done-comments-${videoId}`) || '[]');
+      const doneComments = JSON.parse(localStorage.getItem(`done-comments-${slug}`) || '[]');
       setIsDone(doneComments.includes(comment.id));
     } catch (e) {
       console.error("Could not read from local storage", e);
     }
-  }, [comment.id, videoId]);
+  }, [comment.id, slug]);
   
   const toggleDone = () => {
-    if (!videoId) return;
+    if (!slug) return;
     try {
-      const doneComments: string[] = JSON.parse(localStorage.getItem(`done-comments-${videoId}`) || '[]');
+      const doneComments: string[] = JSON.parse(localStorage.getItem(`done-comments-${slug}`) || '[]');
       const newIsDone = !isDone;
 
       let newDoneComments: string[];
@@ -36,7 +36,7 @@ export default function CommentItem({ comment, videoId }: { comment: Comment, vi
         newDoneComments = doneComments.filter(id => id !== comment.id);
       }
       
-      localStorage.setItem(`done-comments-${videoId}`, JSON.stringify(newDoneComments));
+      localStorage.setItem(`done-comments-${slug}`, JSON.stringify(newDoneComments));
       setIsDone(newIsDone);
     } catch (e) {
       console.error("Could not write to local storage", e);

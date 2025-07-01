@@ -64,15 +64,12 @@ export async function POST(request: NextRequest) {
 
     const videoPath = path.join(videosDir, newFilename);
     await writeFile(videoPath, buffer);
-
-    const commentPath = path.join(commentsDir, `${videoId}.json`);
-    await writeFile(commentPath, JSON.stringify([]));
     
     let project: VideoProject;
     let finalSlug: string;
 
     if (existingSlug) {
-        // This is a new version of an existing project
+        // This is a new version of an existing project. Comments file already exists.
         finalSlug = existingSlug;
         const metadataPath = path.join(metadataDir, `${finalSlug}.json`);
         const fileContent = await readFile(metadataPath, 'utf-8');
@@ -96,6 +93,10 @@ export async function POST(request: NextRequest) {
         const baseSlug = slugify(originalNameWithoutExt) || 'video';
         finalSlug = await findUniqueSlug(baseSlug, metadataDir);
         
+        // Create the comment file for the new project, tied to the slug
+        const commentPath = path.join(commentsDir, `${finalSlug}.json`);
+        await writeFile(commentPath, JSON.stringify([]));
+
         project = {
             slug: finalSlug,
             originalName: file.name,
