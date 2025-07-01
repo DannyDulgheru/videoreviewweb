@@ -14,8 +14,17 @@ export function VideoProvider({ children }: { children: ReactNode }) {
 
   const seekTo = (time: number) => {
     if (videoRef.current) {
-      videoRef.current.play();
-      videoRef.current.currentTime = time;
+      const video = videoRef.current;
+      
+      const playWhenSeeked = () => {
+        video.play();
+        video.removeEventListener('seeked', playWhenSeeked);
+      };
+      
+      // We add a one-time event listener that will play the video
+      // as soon as the browser has seeked to the correct time.
+      video.addEventListener('seeked', playWhenSeeked);
+      video.currentTime = time;
     }
   };
 
