@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stat, readFile, readdir } from 'fs/promises';
+import { readFile, readdir } from 'fs/promises';
 import path from 'path';
 import { statSync } from 'fs';
 
@@ -31,19 +31,50 @@ export async function GET(
     }
 
     const fileStat = statSync(filePath);
-    const file = await readFile(filePath);
-
-    const headers = new Headers();
-    headers.set('Content-Length', fileStat.size.toString());
+    const fileSize = fileStat.size;
+    const range = request.headers.get('range');
+    
     const fileExtension = path.extname(filename).toLowerCase();
     let contentType = 'video/mp4'; // Default
     if (fileExtension === '.webm') contentType = 'video/webm';
     if (fileExtension === '.ogv') contentType = 'video/ogg';
     if (fileExtension === '.mov') contentType = 'video/quicktime';
-    headers.set('Content-Type', contentType);
-    headers.set('Accept-Ranges', 'bytes');
+    
+    if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] 
+            ? parseInt(parts[1], 10) 
+            : fileSize - 1;
 
-    return new NextResponse(file, { status: 200, headers });
+        if(start >= fileSize || end >= fileSize) {
+            return new NextResponse('Range Not Satisfiable', {
+                status: 416,
+                headers: { 'Content-Range': `bytes */${fileSize}` }
+            });
+        }
+        
+        const chunksize = (end - start) + 1;
+        
+        const file = await readFile(filePath);
+        const videoChunk = file.subarray(start, end + 1);
+
+        const headers = new Headers();
+        headers.set('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+        headers.set('Accept-Ranges', 'bytes');
+        headers.set('Content-Length', chunksize.toString());
+        headers.set('Content-Type', contentType);
+
+        return new NextResponse(videoChunk, { status: 206, headers });
+    } else {
+        const file = await readFile(filePath);
+        const headers = new Headers();
+        headers.set('Content-Length', fileSize.toString());
+        headers.set('Content-Type', contentType);
+        headers.set('Accept-Ranges', 'bytes');
+
+        return new NextResponse(file, { status: 200, headers });
+    }
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
       return new NextResponse('Video not found', { status: 404 });
