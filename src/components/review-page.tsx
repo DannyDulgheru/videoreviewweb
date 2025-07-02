@@ -10,6 +10,8 @@ import type { VideoProject, VideoVersion, Comment } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { summarizeFeedback } from '@/ai/flows/summarize-feedback-flow';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
 
 export default function ReviewPage({ project, initialVersion }: { project: VideoProject, initialVersion: VideoVersion }) {
   const router = useRouter();
@@ -22,6 +24,10 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [projectTitle, setProjectTitle] = useState(project.originalName);
   const [hoveredCommentId, setHoveredCommentId] = useState<string | null>(null);
+
+  const [summary, setSummary] = useState('');
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
   
   useEffect(() => {
     setSelectedVersion(initialVersion);
@@ -107,6 +113,29 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
     setComments(prev => prev.map(c => c.id === updatedComment.id ? updatedComment : c));
   };
 
+  const handleSummarize = async () => {
+    if (comments.length === 0) {
+        toast({ variant: 'destructive', title: 'No Feedback', description: 'There is no feedback to summarize.' });
+        return;
+    }
+    setIsSummarizing(true);
+    setSummary('');
+    try {
+        const input = {
+            comments: comments.map(c => ({ text: c.text, version: c.version })),
+            videoTitle: projectTitle,
+        };
+        const result = await summarizeFeedback(input);
+        setSummary(result.summary);
+        setIsSummaryDialogOpen(true);
+    } catch (error) {
+        console.error("Failed to summarize feedback", error);
+        toast({ variant: 'destructive', title: 'Summarization Failed', description: 'Could not generate a summary. Please try again.' });
+    } finally {
+        setIsSummarizing(false);
+    }
+  };
+
   return (
     <VideoProvider>
       <div className="flex flex-col w-full h-full max-w-screen-2xl mx-auto space-y-4">
@@ -162,10 +191,27 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
                 onCommentUpdated={handleCommentUpdated}
                 hoveredCommentId={hoveredCommentId}
                 setHoveredCommentId={setHoveredCommentId}
+                onSummarize={handleSummarize}
+                isSummarizing={isSummarizing}
             />
           </div>
         </div>
       </div>
+       <AlertDialog open={isSummaryDialogOpen} onOpenChange={setIsSummaryDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+            <AlertDialogHeader>
+                <AlertDialogTitle>Feedback Summary for "{projectTitle}"</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                    <div className="whitespace-pre-wrap max-h-[60vh] overflow-y-auto text-foreground/90 pr-4">
+                        {summary}
+                    </div>
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Close</AlertDialogCancel>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </VideoProvider>
   );
 }
