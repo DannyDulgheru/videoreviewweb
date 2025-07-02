@@ -201,6 +201,7 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
                 hoveredCommentId={hoveredCommentId}
                 setHoveredCommentId={setHoveredCommentId}
                 activeCommentId={activeCommentId}
+                versions={project.versions}
             />
           </div>
         </div>

@@ -1,10 +1,12 @@
 'use client';
 
-import type { Comment } from '@/lib/types';
+import type { Comment, VideoVersion } from '@/lib/types';
 import CommentList from '@/components/comment-list';
 import CommentInput from '@/components/comment-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useMemo } from 'react';
 
 export default function CommentsSection({ 
     slug, 
@@ -16,6 +18,7 @@ export default function CommentsSection({
     hoveredCommentId,
     setHoveredCommentId,
     activeCommentId,
+    versions,
 }: { 
     slug: string, 
     currentVersion: number,
@@ -26,12 +29,37 @@ export default function CommentsSection({
     hoveredCommentId: string | null,
     setHoveredCommentId: (id: string | null) => void,
     activeCommentId: string | null,
+    versions: VideoVersion[],
 }) {
+  const [filterVersion, setFilterVersion] = useState('all');
+
+  const filteredComments = useMemo(() => {
+    if (filterVersion === 'all') {
+      return comments;
+    }
+    const versionNumber = parseInt(filterVersion, 10);
+    return comments.filter(comment => comment.version === versionNumber);
+  }, [comments, filterVersion]);
   
+  const sortedVersions = useMemo(() => [...versions].sort((a,b) => a.version - b.version), [versions]);
+
   return (
     <div className="flex flex-col h-full bg-card-foreground/5">
       <div className="p-4 border-b border-border flex-shrink-0">
-        <h2 className="text-xl font-bold font-headline">Feedback</h2>
+        <h2 className="text-xl font-bold font-headline mb-4">Feedback</h2>
+        
+        {sortedVersions.length > 1 && (
+            <Tabs value={filterVersion} onValueChange={setFilterVersion}>
+                <TabsList>
+                    <TabsTrigger value="all">All Versions</TabsTrigger>
+                    {sortedVersions.map(v => (
+                        <TabsTrigger key={v.version} value={String(v.version)}>
+                            Version {v.version}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+            </Tabs>
+        )}
       </div>
       <ScrollArea className="flex-grow p-4">
         {isLoading ? (
@@ -41,7 +69,7 @@ export default function CommentsSection({
                 <Skeleton className="h-16 w-full" />
             </div>
         ) : <CommentList 
-                comments={comments} 
+                comments={filteredComments} 
                 slug={slug} 
                 onCommentPosted={onCommentPosted}
                 onCommentUpdated={onCommentUpdated}
