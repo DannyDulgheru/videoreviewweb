@@ -5,8 +5,6 @@ import CommentList from '@/components/comment-list';
 import CommentInput from '@/components/comment-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { BrainCircuit, Loader2 } from 'lucide-react';
 
 export default function CommentsSection({ 
     slug, 
@@ -17,8 +15,6 @@ export default function CommentsSection({
     onCommentUpdated,
     hoveredCommentId,
     setHoveredCommentId,
-    onSummarize,
-    isSummarizing,
 }: { 
     slug: string, 
     currentVersion: number,
@@ -28,18 +24,12 @@ export default function CommentsSection({
     onCommentUpdated: (comment: Comment) => void,
     hoveredCommentId: string | null,
     setHoveredCommentId: (id: string | null) => void,
-    onSummarize: () => void,
-    isSummarizing: boolean,
 }) {
   
   return (
     <div className="flex flex-col h-full bg-card-foreground/5">
-      <div className="p-4 border-b border-border flex justify-between items-center flex-shrink-0">
+      <div className="p-4 border-b border-border flex-shrink-0">
         <h2 className="text-xl font-bold font-headline">Feedback</h2>
-         <Button variant="outline" size="sm" onClick={onSummarize} disabled={isSummarizing || comments.length === 0}>
-            {isSummarizing ? <Loader2 className="animate-spin" /> : <BrainCircuit />}
-            <span className="ml-2 hidden sm:inline">Summarize</span>
-        </Button>
       </div>
       <ScrollArea className="flex-grow p-4">
         {isLoading ? (
