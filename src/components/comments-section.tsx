@@ -46,20 +46,22 @@ export default function CommentsSection({
   return (
     <div className="flex flex-col h-full bg-card-foreground/5">
       <div className="p-4 border-b border-border flex-shrink-0">
-        <h2 className="text-xl font-bold font-headline mb-4">Feedback</h2>
-        
-        {sortedVersions.length > 1 && (
-            <Tabs value={filterVersion} onValueChange={setFilterVersion}>
-                <TabsList>
-                    <TabsTrigger value="all">All Versions</TabsTrigger>
-                    {sortedVersions.map(v => (
-                        <TabsTrigger key={v.version} value={String(v.version)}>
-                            Version {v.version}
-                        </TabsTrigger>
-                    ))}
-                </TabsList>
-            </Tabs>
-        )}
+        <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold font-headline">Feedback</h2>
+            
+            {sortedVersions.length > 1 && (
+                <Tabs value={filterVersion} onValueChange={setFilterVersion}>
+                    <TabsList className="h-9">
+                        <TabsTrigger value="all" className="text-xs px-3">All</TabsTrigger>
+                        {sortedVersions.map(v => (
+                            <TabsTrigger key={v.version} value={String(v.version)} className="text-xs px-3">
+                                V{v.version}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                </Tabs>
+            )}
+        </div>
       </div>
       <ScrollArea className="flex-grow p-4">
         {isLoading ? (
