@@ -10,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
+import { Download } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 export default function ReviewPage({ project, initialVersion }: { project: VideoProject, initialVersion: VideoVersion }) {
   const router = useRouter();
@@ -142,23 +145,40 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
                 </h1>
             )}
             
-            {project.versions.length > 1 && (
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground shrink-0">Select Version:</span>
-                    <Select onValueChange={handleVersionChange} defaultValue={String(selectedVersion.version)}>
-                        <SelectTrigger className="w-full sm:w-[220px]">
-                            <SelectValue placeholder="Select version" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {project.versions.map(v => (
-                                <SelectItem key={v.videoId} value={String(v.version)}>
-                                    Version {v.version} - {new Date(v.uploadedAt).toLocaleDateString()}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
+            <div className="flex items-center gap-2">
+                {project.versions.length > 1 && (
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground shrink-0">Version:</span>
+                        <Select onValueChange={handleVersionChange} defaultValue={String(selectedVersion.version)}>
+                            <SelectTrigger className="w-full sm:w-[220px]">
+                                <SelectValue placeholder="Select version" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {project.versions.map(v => (
+                                    <SelectItem key={v.videoId} value={String(v.version)}>
+                                        Version {v.version} - {new Date(v.uploadedAt).toLocaleDateString()}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button asChild variant="outline" size="icon">
+                        <a href={`/api/videos/${selectedVersion.videoId}`} download={selectedVersion.originalName}>
+                          <Download className="h-4 w-4" />
+                          <span className="sr-only">Download Video</span>
+                        </a>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Download V{selectedVersion.version}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+            </div>
         </header>
         <div className="flex flex-col md:flex-row w-full flex-grow bg-card rounded-xl shadow-lg overflow-hidden animate-in fade-in-50 min-h-0">
           <div className="relative w-full md:w-3/5 h-full flex items-center justify-center bg-black">

@@ -176,8 +176,7 @@ export default function VideoPlayer({
                 {duration > 0 && (
                   <TooltipProvider>
                       <div className="absolute w-full h-full pointer-events-none z-20">
-                          {comments.map((comment) => {
-                              if (comment.parentId) return null;
+                          {comments.filter(c => !c.parentId).map((comment) => {
                               const isHovered = hoveredCommentId === comment.id;
                               return (
                                   <Tooltip key={comment.id} delayDuration={100}>
@@ -186,7 +185,7 @@ export default function VideoPlayer({
                                               onMouseEnter={() => setHoveredCommentId(comment.id)}
                                               onMouseLeave={() => setHoveredCommentId(null)}
                                               className={cn(
-                                                  "absolute w-2 h-2 top-1/2 -translate-y-1/2 bg-accent rounded-full pointer-events-auto cursor-pointer transition-all duration-200 group-hover/progress:w-3 group-hover/progress:h-3",
+                                                  "absolute w-2 h-2 top-1/2 -translate-y-1/2 bg-accent rounded-full pointer-events-auto cursor-pointer transition-all duration-200 group-hover/progress:w-3 group-hover/progress:h-3 ring-1 ring-white/50",
                                                   isHovered && "ring-2 ring-accent ring-offset-2 ring-offset-black w-3.5 h-3.5"
                                               )}
                                               style={{ left: `${(comment.timestamp / duration) * 100}%` }}

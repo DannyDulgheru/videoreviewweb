@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import CommentInput from './comment-input';
+import { Badge } from './ui/badge';
 
 
 export default function CommentItem({ 
@@ -189,6 +190,7 @@ export default function CommentItem({
                 {formatTimestamp(comment.timestamp)}
               </Button>
               <p className="text-sm font-bold text-foreground">{comment.author}</p>
+              <Badge variant="secondary" className="text-xs font-light tracking-wider font-mono px-1.5 py-0.5">V{comment.version}</Badge>
             </div>
             {isEditing ? (
               <div className="mt-1 space-y-2">
