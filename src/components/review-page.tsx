@@ -4,12 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import VideoPlayer from '@/components/video-player';
 import CommentsSection from '@/components/comments-section';
-import { Separator } from '@/components/ui/separator';
 import { VideoProvider } from '@/contexts/video-context';
 import type { VideoProject, VideoVersion, Comment } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function ReviewPage({ project, initialVersion }: { project: VideoProject, initialVersion: VideoVersion }) {
   const router = useRouter();
@@ -22,6 +22,8 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [projectTitle, setProjectTitle] = useState(project.originalName);
   const [hoveredCommentId, setHoveredCommentId] = useState<string | null>(null);
+  const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+
   
   useEffect(() => {
     setSelectedVersion(initialVersion);
@@ -100,11 +102,24 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
   };
   
   const handleCommentPosted = (newComment: Comment) => {
-    setComments(prev => [...prev, newComment]);
+    setComments(prev => [...prev, newComment].sort((a,b) => a.timestamp - b.timestamp));
   };
   
   const handleCommentUpdated = (updatedComment: Comment) => {
     setComments(prev => prev.map(c => c.id === updatedComment.id ? updatedComment : c));
+  };
+
+  const handleTimeUpdate = (time: number) => {
+    const sortedComments = comments.filter(c => c.version === selectedVersion.version).sort((a, b) => a.timestamp - b.timestamp);
+    let currentComment = null;
+    for (const comment of sortedComments) {
+      if (time >= comment.timestamp - 0.5) {
+        currentComment = comment.id;
+      } else {
+        break;
+      }
+    }
+    setActiveCommentId(currentComment);
   };
 
   return (
@@ -146,13 +161,16 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
             )}
         </header>
         <div className="flex flex-col md:flex-row w-full flex-grow bg-card rounded-xl shadow-lg overflow-hidden animate-in fade-in-50 min-h-0">
-          <div className="relative w-full md:w-[65%] h-full flex items-center justify-center bg-black">
-            <VideoPlayer videoId={selectedVersion.videoId} comments={comments} hoveredCommentId={hoveredCommentId} setHoveredCommentId={setHoveredCommentId} />
+          <div className="relative w-full md:w-3/5 h-full flex items-center justify-center bg-black">
+            <VideoPlayer 
+                videoId={selectedVersion.videoId} 
+                comments={comments.filter(c => c.version === selectedVersion.version)} 
+                hoveredCommentId={hoveredCommentId} 
+                setHoveredCommentId={setHoveredCommentId}
+                onTimeUpdate={handleTimeUpdate}
+            />
           </div>
-          <div className="hidden md:flex items-center justify-center w-[2%]">
-            <Separator orientation="vertical" className="h-full" />
-          </div>
-          <div className="w-full md:w-[33%] h-full flex flex-col min-h-0">
+          <div className="w-full md:w-2/5 h-full flex flex-col min-h-0">
             <CommentsSection 
                 slug={project.slug} 
                 currentVersion={selectedVersion.version}
@@ -162,6 +180,7 @@ export default function ReviewPage({ project, initialVersion }: { project: Video
                 onCommentUpdated={handleCommentUpdated}
                 hoveredCommentId={hoveredCommentId}
                 setHoveredCommentId={setHoveredCommentId}
+                activeCommentId={activeCommentId}
             />
           </div>
         </div>

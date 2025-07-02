@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, Circle } from 'lucide-react';
+import { CheckCircle2, Circle, MessageSquarePlus } from 'lucide-react';
 import { useVideo } from '@/contexts/video-context';
 import type { Comment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -9,29 +9,36 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import CommentInput from './comment-input';
 
 
 export default function CommentItem({ 
     comment, 
     slug, 
+    onCommentPosted,
     onCommentUpdated,
     hoveredCommentId,
-    setHoveredCommentId
+    setHoveredCommentId,
+    activeCommentId,
 }: { 
     comment: Comment, 
     slug: string, 
+    onCommentPosted: (comment: Comment) => void,
     onCommentUpdated: (comment: Comment) => void,
     hoveredCommentId: string | null,
-    setHoveredCommentId: (id: string | null) => void
+    setHoveredCommentId: (id: string | null) => void,
+    activeCommentId: string | null,
 }) {
   const { seekTo } = useVideo();
   const { toast } = useToast();
   const [isDone, setIsDone] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
   const [editText, setEditText] = useState(comment.text);
+  const [isHovered, setIsHovered] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const isHighlighted = comment.id === hoveredCommentId;
+  const isHighlighted = comment.id === hoveredCommentId || comment.id === activeCommentId;
 
   useEffect(() => {
     if (!slug) return;
@@ -118,6 +125,11 @@ export default function CommentItem({
     }
   }
 
+  const handleReplyPosted = (newComment: Comment) => {
+    onCommentPosted(newComment);
+    setIsReplying(false);
+  }
+
   const formatTimestamp = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
@@ -125,51 +137,71 @@ export default function CommentItem({
   };
 
   return (
-    <div 
-        className={cn(
-            'flex items-start space-x-3 p-2 rounded-lg transition-all duration-200', 
-            isDone ? 'opacity-40' : 'opacity-100',
-            isHighlighted && 'bg-accent/10'
-        )}
-        onMouseEnter={() => setHoveredCommentId(comment.id)}
-        onMouseLeave={() => setHoveredCommentId(null)}
-    >
-        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full flex-shrink-0" onClick={toggleDone} aria-label={isDone ? 'Mark as not done' : 'Mark as done'}>
-            {isDone ? <CheckCircle2 className="text-green-500" /> : <Circle className="text-muted-foreground" />}
-        </Button>
-      <div className="flex-1">
-        <div className="flex items-center space-x-2">
-          <button onClick={() => seekTo(comment.timestamp)} className="text-sm font-semibold text-accent hover:underline">
-            {formatTimestamp(comment.timestamp)}
-          </button>
-          <p className="text-sm font-bold text-foreground">{comment.author}</p>
-          <Badge variant="outline" className="px-1.5 py-0 text-xs">V{comment.version}</Badge>
-        </div>
-        {isEditing ? (
-          <div className="mt-1 space-y-2">
-            <Textarea 
-              ref={textareaRef}
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              className="resize-none"
-              rows={Math.max(2, editText.split('\n').length)}
-              onKeyDown={handleKeyDown}
-            />
-            <div className="flex items-center justify-end space-x-2">
-                <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
-                    Cancel
-                </Button>
-                <Button size="sm" onClick={handleSaveEdit}>
-                    Save
-                </Button>
+    <div className="relative">
+        <div 
+            className={cn(
+                'flex items-start space-x-3 p-2 rounded-lg transition-all duration-200 group', 
+                isDone ? 'opacity-40' : 'opacity-100',
+                isHighlighted && 'bg-accent/20'
+            )}
+            onMouseEnter={() => { setHoveredCommentId(comment.id); setIsHovered(true); }}
+            onMouseLeave={() => { setHoveredCommentId(null); setIsHovered(false); }}
+        >
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full flex-shrink-0" onClick={toggleDone} aria-label={isDone ? 'Mark as not done' : 'Mark as done'}>
+                {isDone ? <CheckCircle2 className="h-5 w-5 text-green-500" /> : <Circle className="h-5 w-5 text-muted-foreground" />}
+            </Button>
+          <div className="flex-1">
+            <div className="flex items-center space-x-2 flex-wrap">
+              <button onClick={() => seekTo(comment.timestamp)} className="text-sm font-semibold text-accent hover:underline">
+                at {formatTimestamp(comment.timestamp)}
+              </button>
+              <p className="text-sm font-bold text-foreground">{comment.author}</p>
+              <Badge variant="secondary" className="px-1.5 py-0 text-xs">V{comment.version}</Badge>
             </div>
+            {isEditing ? (
+              <div className="mt-1 space-y-2">
+                <Textarea 
+                  ref={textareaRef}
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="resize-none"
+                  rows={Math.max(2, editText.split('\n').length)}
+                  onKeyDown={handleKeyDown}
+                />
+                <div className="flex items-center justify-end space-x-2">
+                    <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                        Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleSaveEdit}>
+                        Save
+                    </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-foreground/90 whitespace-pre-wrap mt-1" onDoubleClick={handleDoubleClick}>
+                {comment.text}
+              </p>
+            )}
           </div>
-        ) : (
-          <p className="text-foreground/90 whitespace-pre-wrap" onDoubleClick={handleDoubleClick}>
-            {comment.text}
-          </p>
+            <div className={cn("absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity", isHovered ? 'opacity-100' : 'opacity-0')}>
+                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsReplying(true)}>
+                     <MessageSquarePlus className="h-4 w-4 text-muted-foreground"/>
+                 </Button>
+            </div>
+        </div>
+
+        {isReplying && (
+            <div className="mt-2 ml-10 pl-2">
+                <CommentInput 
+                    slug={slug}
+                    version={comment.version}
+                    onCommentPosted={handleReplyPosted}
+                    parentId={comment.id}
+                    onCancel={() => setIsReplying(false)}
+                    isReply={true}
+                />
+            </div>
         )}
-      </div>
     </div>
   );
 }

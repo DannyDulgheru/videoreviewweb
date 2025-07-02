@@ -4,6 +4,7 @@ export type Comment = {
   timestamp: number;
   author: string;
   version: number;
+  parentId?: string;
 };
 
 export type UploadResult = {

@@ -15,6 +15,7 @@ export default function CommentsSection({
     onCommentUpdated,
     hoveredCommentId,
     setHoveredCommentId,
+    activeCommentId,
 }: { 
     slug: string, 
     currentVersion: number,
@@ -24,6 +25,7 @@ export default function CommentsSection({
     onCommentUpdated: (comment: Comment) => void,
     hoveredCommentId: string | null,
     setHoveredCommentId: (id: string | null) => void,
+    activeCommentId: string | null,
 }) {
   
   return (
@@ -38,7 +40,15 @@ export default function CommentsSection({
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
             </div>
-        ) : <CommentList comments={comments} slug={slug} onCommentUpdated={onCommentUpdated} hoveredCommentId={hoveredCommentId} setHoveredCommentId={setHoveredCommentId} />}
+        ) : <CommentList 
+                comments={comments} 
+                slug={slug} 
+                onCommentPosted={onCommentPosted}
+                onCommentUpdated={onCommentUpdated}
+                hoveredCommentId={hoveredCommentId}
+                setHoveredCommentId={setHoveredCommentId}
+                activeCommentId={activeCommentId}
+            />}
       </ScrollArea>
       <div className="p-4 border-t border-border bg-card flex-shrink-0">
         <CommentInput slug={slug} version={currentVersion} onCommentPosted={onCommentPosted} />

@@ -18,7 +18,14 @@ function generateRandomName() {
 }
 
 
-export default function CommentInput({ slug, version, onCommentPosted }: { slug: string, version: number, onCommentPosted: (comment: Comment) => void }) {
+export default function CommentInput({ slug, version, onCommentPosted, parentId, onCancel, isReply = false }: { 
+    slug: string, 
+    version: number, 
+    onCommentPosted: (comment: Comment) => void,
+    parentId?: string,
+    onCancel?: () => void,
+    isReply?: boolean,
+}) {
   const [text, setText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authorName, setAuthorName] = useState('Anonymous');
@@ -45,13 +52,13 @@ export default function CommentInput({ slug, version, onCommentPosted }: { slug:
     if (!text.trim() || !videoRef.current) return;
 
     setIsSubmitting(true);
-    const timestamp = videoRef.current.currentTime;
+    const timestamp = parentId ? 0 : videoRef.current.currentTime; // Replies don't need a new timestamp
 
     try {
       const response = await fetch(`/api/comments/${slug}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, timestamp, author: authorName, version }),
+        body: JSON.stringify({ text, timestamp, author: authorName, version, parentId }),
       });
 
       if (response.ok) {
@@ -75,22 +82,39 @@ export default function CommentInput({ slug, version, onCommentPosted }: { slug:
          handleSubmit(e as any);
       }
     }
+    if (e.key === 'Escape' && onCancel) {
+        e.preventDefault();
+        onCancel();
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-start space-x-2">
-      <Textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Add your feedback... (Shift+Enter for new line)"
-        className="flex-1 resize-none"
-        rows={2}
-        disabled={isSubmitting}
-      />
-      <Button type="submit" size="icon" disabled={isSubmitting || !text.trim()} aria-label="Post comment">
-        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-      </Button>
+    <form onSubmit={handleSubmit} className="space-y-2">
+      <div className="flex items-start space-x-2">
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isReply ? "Write a reply... (Shift+Enter for new line)" : "Add your feedback... (Shift+Enter for new line)"}
+            className="flex-1 resize-none"
+            rows={isReply ? 2 : 3}
+            disabled={isSubmitting}
+            autoFocus={isReply}
+          />
+         {!isReply && (
+            <Button type="submit" size="icon" disabled={isSubmitting || !text.trim()} aria-label="Post comment">
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+         )}
+      </div>
+      {isReply && (
+        <div className="flex justify-end space-x-2">
+            {onCancel && <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>}
+             <Button type="submit" size="sm" disabled={isSubmitting || !text.trim()} aria-label="Post reply">
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reply'}
+            </Button>
+        </div>
+      )}
     </form>
   );
 }

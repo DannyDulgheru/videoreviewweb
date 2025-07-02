@@ -43,7 +43,7 @@ export async function POST(
   try {
     const slug = params.videoId;
     const filePath = getCommentFilePath(slug);
-    const { text, timestamp, author, version } = await request.json();
+    const { text, timestamp, author, version, parentId } = await request.json();
 
     if (!text || typeof timestamp !== 'number' || !author || typeof version !== 'number') {
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
@@ -67,6 +67,7 @@ export async function POST(
       timestamp,
       author,
       version,
+      ...(parentId && { parentId }),
     };
 
     comments.push(newComment);
