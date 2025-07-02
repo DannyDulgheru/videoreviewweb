@@ -175,8 +175,9 @@ export default function VideoPlayer({
                 />
                 {duration > 0 && (
                   <TooltipProvider>
-                      <div className="absolute w-full h-full pointer-events-none">
+                      <div className="absolute w-full h-full pointer-events-none z-20">
                           {comments.map((comment) => {
+                              if (comment.parentId) return null;
                               const isHovered = hoveredCommentId === comment.id;
                               return (
                                   <Tooltip key={comment.id} delayDuration={100}>

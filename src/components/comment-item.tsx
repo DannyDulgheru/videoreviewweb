@@ -157,14 +157,12 @@ export default function CommentItem({
                 </div>
               </div>
            ) : (
-              <div className="flex items-start space-x-3">
-                  <div className="flex-1">
-                      <p className="text-foreground/90 whitespace-pre-wrap text-sm" onDoubleClick={handleDoubleClick}>
-                          <span className="font-bold text-foreground mr-2">{comment.author}:</span>
-                          {comment.text}
-                      </p>
-                  </div>
-              </div>
+                <div className="grid grid-cols-[auto_1fr] items-baseline gap-x-2">
+                    <p className="font-bold text-foreground text-sm">{comment.author}:</p>
+                    <p className="text-foreground/90 whitespace-pre-wrap text-sm" onDoubleClick={handleDoubleClick}>
+                        {comment.text}
+                    </p>
+                </div>
            )}
        </div>
     );
