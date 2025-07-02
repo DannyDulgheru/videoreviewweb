@@ -7,7 +7,6 @@ import type { Comment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import CommentInput from './comment-input';
 
@@ -39,16 +38,17 @@ export default function CommentItem({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const isHighlighted = comment.id === hoveredCommentId || comment.id === activeCommentId;
+  const isReply = !!comment.parentId;
 
   useEffect(() => {
-    if (!slug) return;
+    if (!slug || isReply) return; // Don't track 'done' status for replies
     try {
       const doneComments = JSON.parse(localStorage.getItem(`done-comments-${slug}`) || '[]');
       setIsDone(doneComments.includes(comment.id));
     } catch (e) {
       console.error("Could not read from local storage", e);
     }
-  }, [comment.id, slug]);
+  }, [comment.id, slug, isReply]);
   
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -58,7 +58,7 @@ export default function CommentItem({
   }, [isEditing]);
   
   const toggleDone = () => {
-    if (!slug) return;
+    if (!slug || isReply) return;
     try {
       const doneComments: string[] = JSON.parse(localStorage.getItem(`done-comments-${slug}`) || '[]');
       const newIsDone = !isDone;
@@ -135,7 +135,42 @@ export default function CommentItem({
     const s = Math.floor(seconds % 60);
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
+  
+  // Render replies (subcomments) differently
+  if (isReply) {
+    return (
+       <div className={cn('p-2 rounded-lg transition-all duration-200', isHighlighted && 'bg-accent/20')}>
+           {isEditing ? (
+              <div className="space-y-2">
+                <Textarea 
+                  ref={textareaRef}
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="resize-none"
+                  rows={Math.max(2, editText.split('\n').length)}
+                  onKeyDown={handleKeyDown}
+                  autoFocus
+                />
+                <div className="flex items-center justify-end space-x-2">
+                    <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Cancel</Button>
+                    <Button size="sm" onClick={handleSaveEdit}>Save</Button>
+                </div>
+              </div>
+           ) : (
+              <div className="flex items-start space-x-3">
+                  <div className="flex-1">
+                      <p className="text-foreground/90 whitespace-pre-wrap text-sm" onDoubleClick={handleDoubleClick}>
+                          <span className="font-bold text-foreground mr-2">{comment.author}:</span>
+                          {comment.text}
+                      </p>
+                  </div>
+              </div>
+           )}
+       </div>
+    );
+  }
 
+  // Render top-level comments
   return (
     <div className="relative">
         <div 
@@ -148,15 +183,14 @@ export default function CommentItem({
             onMouseLeave={() => { setHoveredCommentId(null); setIsHovered(false); }}
         >
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full flex-shrink-0" onClick={toggleDone} aria-label={isDone ? 'Mark as not done' : 'Mark as done'}>
-                {isDone ? <CheckCircle2 className="h-5 w-5 text-green-500" /> : <Circle className="h-5 w-5 text-muted-foreground" />}
+                {isDone ? <CheckCircle2 className="h-6 w-6 text-green-500" /> : <Circle className="h-6 w-6 text-muted-foreground" />}
             </Button>
           <div className="flex-1">
             <div className="flex items-center space-x-2 flex-wrap">
-              <button onClick={() => seekTo(comment.timestamp)} className="text-sm font-semibold text-accent hover:underline">
-                at {formatTimestamp(comment.timestamp)}
-              </button>
+              <Button variant="link" onClick={() => seekTo(comment.timestamp)} className="text-sm font-semibold text-accent hover:underline p-0 h-auto">
+                {formatTimestamp(comment.timestamp)}
+              </Button>
               <p className="text-sm font-bold text-foreground">{comment.author}</p>
-              <Badge variant="secondary" className="px-1.5 py-0 text-xs">V{comment.version}</Badge>
             </div>
             {isEditing ? (
               <div className="mt-1 space-y-2">
@@ -169,12 +203,8 @@ export default function CommentItem({
                   onKeyDown={handleKeyDown}
                 />
                 <div className="flex items-center justify-end space-x-2">
-                    <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
-                        Cancel
-                    </Button>
-                    <Button size="sm" onClick={handleSaveEdit}>
-                        Save
-                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Cancel</Button>
+                    <Button size="sm" onClick={handleSaveEdit}>Save</Button>
                 </div>
               </div>
             ) : (
