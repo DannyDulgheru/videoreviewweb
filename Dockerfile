@@ -39,7 +39,6 @@ RUN mkdir -p /app/uploads/videos /app/uploads/comments /app/uploads/metadata /ap
 RUN chown -R nextjs:nodejs /app/uploads
 
 # Copy built application
-COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
